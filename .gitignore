@@ -1,1 +1,39 @@
+# ==========================================
+# Environments & Packages
+# ==========================================
+# Ignore the virtual environment directory created by uv
+.venv/
+venv/
+ENV/
+
+# Ignore compiled Python files
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================================
+# Secrets & Environment Variables
+# ==========================================
+# ABSOLUTELY DO NOT TRACK THIS. It contains your Gemini, Asana, and Slack tokens.
 .env
+.env.local
+.env.*.local
+
+# ==========================================
+# System & IDE Files
+# ==========================================
+.DS_Store
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# ==========================================
+# ADK / Agent Garden Cache
+# ==========================================
+# If the ADK framework generates local interaction logs or tracing states
+.adk/
+.agent_cache/
