@@ -61,7 +61,7 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
 # Define the ADK Agent
 root_agent = Agent(
     name="user_story_refiner",
-    model="gemini-2.5-flash",
+    model="gemini-3.1-flash-lite",
     description="An expert Agile Product Owner that refines vague user inputs into strict User Stories.",
     instruction=agent_instruction,
     # Hand the python tool to the model
