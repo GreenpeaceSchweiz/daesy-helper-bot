@@ -14,7 +14,7 @@ with open(instruction_path, "r", encoding="utf-8") as f:
     agent_instruction = f.read()
 
 # Define the Asana integration function
-def create_asana_task(title: str, description: str) -> str:
+def create_asana_task(title: str, user_story: str, priority_rationale: str, acceptance_criteria: str, refinement_notes: str) -> str:
     """
     Creates a new user story task in Asana using the flat ApiClient syntax.
     """
@@ -25,17 +25,24 @@ def create_asana_task(title: str, description: str) -> str:
     # 2. Instantiate the ApiClient without a 'with' context manager
     api_client = asana.ApiClient(configuration)
     
-    # 3. Create an instance of the Tasks API class
+    # 3. Instantiate API classes
     tasks_api_instance = asana.TasksApi(api_client)
     
     project_gid = os.getenv("ASANA_PROJECT_GID") 
+
+    custom_fields_payload = {
+            os.getenv("ASANA_FIELD_GID_USER_STORY"): user_story,
+            os.getenv("ASANA_FIELD_GID_PRIORITY_RATIONALE"): priority_rationale,
+            os.getenv("ASANA_FIELD_GID_ACCEPTANCE_CRITERIA"): acceptance_criteria,
+            os.getenv("ASANA_FIELD_GID_REFINEMENT_NOTES"): refinement_notes
+        }
     
     # Build the payload body
     body = {
         "data": {
             "name": title,
-            "notes": description,
-            "projects": [project_gid]
+            "projects": [project_gid],
+            "custom_fields": custom_fields_payload
         }
     }
 
