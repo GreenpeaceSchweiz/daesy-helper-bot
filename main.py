@@ -45,7 +45,18 @@ async def main():
         # If the mention is in a thread, use thread_ts. Otherwise, fallback to the message ts.
         thread_ts = event.get("thread_ts", event.get("ts"))
         
-        print(f"🔄 Converting thread {thread_ts} directly to ticket")
+        print(f"🔄 Converting thread {thread_ts} directly to ticket via mention")
+
+        # Fetch the permalink to the thread
+        try:
+            permalink_response = await client.chat_getPermalink(
+                channel=channel_id,
+                message_ts=thread_ts
+            )
+            thread_url = permalink_response.get("permalink", "URL not found")
+        except Exception as e:
+            print(f"⚠️ Could not fetch permalink: {e}")
+            thread_url = "URL not found"
 
         # Fetch the full history of that thread
         thread_history = await client.conversations_replies(
@@ -60,6 +71,9 @@ async def main():
             msg_text = msg.get("text", "")
             context_lines.append(f"User <@{msg_user}> said: {msg_text}")
             
+        # Append the thread link to the context text passed to the agent
+        context_lines.append(f"\nSource Thread Link: {thread_url}")
+        
         context_text = "\n".join(context_lines)
         print(context_text)
         content = types.Content(role='user', parts=[types.Part(text=context_text)])
