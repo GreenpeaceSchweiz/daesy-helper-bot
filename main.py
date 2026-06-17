@@ -14,21 +14,21 @@ from google.genai import types
 load_dotenv()
 
 async def main():
-    # 💡 FIX 1: Create a SINGLE instance of the session service to share memory state
+    # Create a SINGLE instance of the session service to share memory state
     shared_session_service = InMemorySessionService()
 
     # 1. Setup the ADK Runners using the shared service
     interactive_runner = Runner(
         agent=interactive_agent,
         app_name="interactive_story_refiner",
-        session_service=shared_session_service, # <-- Shared
+        session_service=shared_session_service,
         auto_create_session=True,
     )
 
     oneoff_runner = Runner(
         agent=oneoff_agent,
         app_name="oneoff_story_refiner",
-        session_service=shared_session_service, # <-- Shared
+        session_service=shared_session_service,
         auto_create_session=False,
     )
 
