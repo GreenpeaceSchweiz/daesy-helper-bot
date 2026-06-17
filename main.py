@@ -78,7 +78,7 @@ async def main():
         print(context_text)
         content = types.Content(role='user', parts=[types.Part(text=context_text)])
 
-        # 💡 FIX 2: Use the shared session service to create the session
+        # Use the shared session service to create the session
         session = await shared_session_service.create_session(
             app_name="oneoff_story_refiner",
             user_id=user_id
