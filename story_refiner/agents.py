@@ -12,7 +12,7 @@ instruction_path = CURRENT_DIR / "instruction_oneoff.md"
 with open(instruction_path, "r", encoding="utf-8") as f:
     instruction_oneoff = f.read()
 
-
+# TO DO: Create subagents for new requests vs repeat/daily business tasks
 interactive_agent = Agent(
     name="user_story_refiner",
     model="gemini-3.1-flash-lite",
