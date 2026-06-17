@@ -91,6 +91,13 @@ async def main():
                 final_response = event.content.parts[0].text
                 print("Agent Response: ", final_response)
 
+                # Paste the final response back into the thread
+                await client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text=final_response
+                )
+
     # 3. Hand everything over to ADK's native Slack integration handler
     slack_runner = SlackRunner(runner=interactive_runner, slack_app=slack_app)
 
