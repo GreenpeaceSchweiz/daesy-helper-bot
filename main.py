@@ -35,15 +35,15 @@ async def main():
     # 2. Initialize the Slack Bolt App engine
     slack_app = AsyncApp(token=os.environ.get("SLACK_BOT_TOKEN"))
 
-    # Handle shortcut action
-    @slack_app.shortcut("ticket_from_thread") 
-    async def handle_message_shortcut(ack, shortcut, client):
+    # 2: respond to app_mention event
+    @slack_app.event("app_mention") 
+    async def handle_app_mention(ack, event, client):
         await ack()
         
-        user_id = shortcut.get("user", {}).get("id")
-        message = shortcut.get("message", {})
-        channel_id = shortcut.get("channel", {}).get("id")
-        thread_ts = message.get("thread_ts", message.get("ts"))
+        user_id = event.get("user")
+        channel_id = event.get("channel")
+        # If the mention is in a thread, use thread_ts. Otherwise, fallback to the message ts.
+        thread_ts = event.get("thread_ts", event.get("ts"))
         
         print(f"🔄 Converting thread {thread_ts} directly to ticket")
 
