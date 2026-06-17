@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 # Import your real, working agent from your package
-from story_refiner.agent import root_agent
+from story_refiner.agents import interactive_agent
 
 # Import the modern ADK components from the example you found
 from google.adk.integrations.slack import SlackRunner
@@ -16,7 +16,7 @@ load_dotenv()
 async def main():
     # 1. Setup the ADK Runner wrapping your existing User Story Refiner agent
     runner = Runner(
-        agent=root_agent,
+        agent=interactive_agent,
         app_name="asana_story_refiner",
         session_service=InMemorySessionService(),
         auto_create_session=True,
