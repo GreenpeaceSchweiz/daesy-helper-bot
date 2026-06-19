@@ -45,3 +45,25 @@ def register_slack_handlers(slack_app, oneoff_runner, session_service):
                     thread_ts=thread_ts,
                     text=final_response
                 )
+
+    @slack_app.event("assistant_thread_started")
+    async def handle_assistant_thread_started(ack, event, client):
+        await ack()
+        
+        # Grab the context of the new assistant thread
+        assistant_thread = event.get("assistant_thread", {})
+        channel_id = assistant_thread.get("channel_id")
+        context = assistant_thread.get("context", {})
+        user_id = context.get("user_id")
+        
+        if channel_id:
+            welcome_text = (
+                f"👋 Hi! How can I help you today?\n\n"
+                "Feel free to message in any language you'd like."
+            )
+            
+            # Post a friendly greeting directly into the new chat window
+            await client.chat_postMessage(
+                channel=channel_id,
+                text=welcome_text
+            )
