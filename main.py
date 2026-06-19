@@ -15,20 +15,20 @@ load_dotenv()
 
 async def main():
     # Create a SINGLE instance of the session service to share memory state
-    shared_session_service = InMemorySessionService()
+    session_service = InMemorySessionService()
 
     # 1. Setup the ADK Runners using the shared service
     interactive_runner = Runner(
         agent=interactive_agent,
         app_name="interactive_story_refiner",
-        session_service=shared_session_service,
+        session_service=session_service,
         auto_create_session=True,
     )
 
     oneoff_runner = Runner(
         agent=oneoff_agent,
         app_name="oneoff_story_refiner",
-        session_service=shared_session_service,
+        session_service=session_service,
         auto_create_session=False,
     )
 
@@ -78,11 +78,28 @@ async def main():
         print(context_text)
         content = types.Content(role='user', parts=[types.Part(text=context_text)])
 
-        # Use the shared session service to create the session
-        session = await shared_session_service.create_session(
-            app_name="oneoff_story_refiner",
-            user_id=user_id
-        )
+        clean_thread_id = thread_ts.replace(".", "")
+        target_session_id = f"thread_{clean_thread_id}"
+
+        # Try to fetch the session if it already exists in Vertex AI
+        try:
+            session = await session_service.get_session(
+                app_name="oneoff_story_refiner",
+                user_id=user_id,
+                session_id=target_session_id
+            )
+            print(f"🔄 Resuming existing Vertex AI session: {target_session_id}")
+        except Exception:
+            # If it doesn't exist (or throws an error), safely initialize it for the first time
+            session = None
+
+        if not session:
+            print(f"✨ Creating brand-new Vertex AI session: {target_session_id}")
+            session = await session_service.create_session(
+                app_name="oneoff_story_refiner",
+                user_id=user_id,
+                session_id=target_session_id
+            )
         
         # Now oneoff_runner can find session.id because they share the same backend memory
         async for event in oneoff_runner.run_async(
