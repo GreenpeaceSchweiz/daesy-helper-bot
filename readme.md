@@ -16,10 +16,40 @@ Follow these steps to set up your local environment for development.
 
 # Pushing to Cloud Run
 
+**Create Service Account**
+```
+gcloud iam service-accounts create story-refiner-runner \
+    --description="Service account for the Asana User Story Refiner Cloud Run bot" \
+    --display-name="Story Refiner Runner"
+```
+
+**Grant Permissions**
+```
+# 1. Allow it to read your scoped secrets
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member="serviceAccount:story-refiner-runner@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/secretmanager.secretAccessor" \
+    --condition="expression=resource.name.startsWith('projects/YOUR_PROJECT_ID/secrets/story_refiner_'),title=Allow Only Story Refiner Secrets,description=Limits secret access to story refiner prefixed secrets"
+
+# 2. Allow it to call Vertex AI models and the Agent Engine
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member="serviceAccount:story-refiner-runner@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/aiplatform.user"
+
+# 3. Allow it to write logs to Cloud Logging so you can debug it
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+    --member="serviceAccount:story-refiner-runner@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/logging.logWriter"
+```
+
+
+
 ```
 gcloud run deploy slack-vertex-bot \
   --source . \
   --allow-unauthenticated \
   --region eu \
-  --set-env-vars="SLACK_BOT_TOKEN=xoxb-prod-token,SLACK_SIGNING_SECRET=prod-secret"
+  --service-account="story-refiner-runner@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --update-secrets="SLACK_BOT_TOKEN=story_refiner_prod_slack_bot_token:latest,SLACK_SIGNING_SECRET=story_refiner_prod_slack_signing_secret:latest" \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,GOOGLE_CLOUD_LOCATION=eu"
 ```
