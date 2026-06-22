@@ -10,7 +10,6 @@ from slack_bolt.async_app import AsyncApp
 
 from story_refiner.agents import interactive_agent, oneoff_agent
 from story_refiner.slack_handlers import register_slack_handlers
-from story_refiner.session_utils import custom_vertex_session_id_generator
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

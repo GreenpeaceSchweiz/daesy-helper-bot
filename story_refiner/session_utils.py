@@ -1,11 +1,15 @@
 import logging
+from typing import Any
+
 
 logger = logging.getLogger(__name__)
 
-async def get_or_create_session(session_service, app_name: str, user_id: str, thread_ts: str) -> str:
+async def get_or_create_session(session_service, app_name: str, event: dict[str, Any]) -> str:
     """Retrieves or initializes a session, returning the validated session ID string."""
-    clean_thread_id = thread_ts.replace(".", "")
-    target_session_id = f"thread-{clean_thread_id}"
+    
+    target_session_id = generate_clean_session_id(event)
+    user_id = event.get("user")
+
     
     try:
         await session_service.create_session(
@@ -26,7 +30,7 @@ async def get_or_create_session(session_service, app_name: str, user_id: str, th
     return target_session_id
 
 
-def custom_vertex_session_id_generator(event: dict) -> str:
+def generate_clean_session_id(event: dict) -> str:
     """
     Replaces the default ADK session ID logic.
     Extracts the Slack timestamp, strips periods, and ensures URL-compliance.
@@ -42,5 +46,4 @@ def custom_vertex_session_id_generator(event: dict) -> str:
     prefix = "dm" if channel.startswith("D") else "thread"
     
     sanitized_id = f"{prefix}-{clean_ts}"
-    logger.info(f"🔮 Custom SlackRunner ID Generator mapped event to: {sanitized_id}")
     return sanitized_id

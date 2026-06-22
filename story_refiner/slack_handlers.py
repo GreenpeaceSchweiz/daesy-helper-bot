@@ -29,8 +29,7 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         session_id = await get_or_create_session(
             session_service, 
             app_name=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID"), 
-            user_id=user_id, 
-            thread_ts=thread_ts
+            event=event
         )
         
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
