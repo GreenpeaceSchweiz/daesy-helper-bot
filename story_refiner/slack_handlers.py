@@ -15,7 +15,7 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
     """
     
     # --- Shared Core Message Handler ---
-    async def _handle_message(event: dict[str, Any], say: Any, runner: Any):
+    async def _handle_message(event: dict[str, Any], say: Any, runner: Any, thinking_ts: str):
         """Processes the message payload and streams responses from the designated ADK runner."""
         text = event.get("text", "")
         user_id = event.get("user")
@@ -33,13 +33,8 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         )
         
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
-        thinking_ts: str | None = None
         
         try:
-            # Post a placeholder message so the user knows the agent is working
-            thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
-            thinking_ts = thinking_response.get("ts")
-
             # Stream chunks from whichever runner was provided to this call
             async for chunk in runner.run_async(
                 user_id=user_id,
@@ -85,6 +80,10 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         
         channel_id = event.get("channel")
         thread_ts = event.get("thread_ts", event.get("ts"))
+
+        # Post a placeholder message so the user knows the agent is working
+        thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
+        thinking_ts = thinking_response.get("ts")
         
         logger.info(f"🔄 Processing channel app_mention for thread {thread_ts}")
 
@@ -93,7 +92,7 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         event["text"] = context_text  
 
         # 2. Direct this to the mention-specific runner
-        await _handle_message(event, say, mention_runner)
+        await _handle_message(event, say, mention_runner, thinking_ts)
 
 
     # --- Route 2: Direct Messages (1-on-1 DMs with Bot) ---
@@ -108,6 +107,11 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         # Check if the message is happening inside an IM (Direct Message) channel
         if event.get("channel_type") == "im":
             logger.info(f"💬 Processing 1-on-1 Direct Message from User: {event.get('user')}")
+
+            # Post a placeholder message so the user knows the agent is working
+            thread_ts = event.get("thread_ts", event.get("ts"))
+            thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
+            thinking_ts = thinking_response.get("ts")
             
             # Direct this to your separate DM runner (e.g. conversational/interactive agent)
-            await _handle_message(event, say, dm_runner)
+            await _handle_message(event, say, dm_runner, thinking_ts)
