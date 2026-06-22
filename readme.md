@@ -11,7 +11,7 @@ Follow these steps to set up your local environment for development.
 *Optional: If you like, you can switch to `InMemorySessionService()` and to using the free tier models in Google AI Studio for local development. For the former, adjust the code in `main.py`. For the latter, make sure to set `GEMINI_API_KEY=[your_key]` & `GOOGLE_GENAI_USE_VERTEXAI=FALSE` in `.env`.* 
 
 **Running locally**
-4. Start uvicorn: `uv run uvicorn main:api --reload --port 8080`
+4. Start uvicorn: `python main.py` or `uv run uvicorn main:api --reload --port 8080`
 5. Start `ngrok`(or similar) using the same port: `ngrok http 8080`.
 
 # Pushing to Cloud Run
