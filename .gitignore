@@ -20,7 +20,7 @@ ENV/
 .env.*.local
 
 # Local deployment scripts
-deploy.sh
+deploy*.sh
 
 # ==========================================
 # System & IDE Files
