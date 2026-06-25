@@ -10,6 +10,7 @@ from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.asgi.async_handler import AsyncSlackRequestHandler
 from story_refiner.agents import interactive_agent, oneoff_agent
 from story_refiner.slack_handlers import register_slack_handlers
+from story_refiner.middleware import safe_deduplicate
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -44,6 +45,8 @@ slack_app = AsyncApp(
 token=os.environ.get("SLACK_BOT_TOKEN"),
 signing_secret=os.environ.get("SLACK_SIGNING_SECRET")
 )
+
+slack_app.middleware(safe_deduplicate)
 
 register_slack_handlers(slack_app, mention_runner=oneoff_runner, dm_runner=interactive_runner, session_service=session_service)
 
