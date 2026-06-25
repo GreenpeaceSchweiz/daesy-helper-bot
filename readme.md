@@ -46,11 +46,20 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
 
 **Push to Cloud Run**
 ```
-gcloud run deploy daesy-helper-bot \
-  --source . \
-  --allow-unauthenticated \
-  --region europe-west6 \
-  --service-account="daesy-helper-bot@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-  --update-secrets="SLACK_BOT_TOKEN=story_refiner_prod_slack_bot_token:latest,SLACK_SIGNING_SECRET=story_refiner_prod_slack_signing_secret:latest" \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID,GOOGLE_CLOUD_LOCATION=eu"
+gcloud run deploy daesy-helper-bot-dev `
+  --source . `
+  --allow-unauthenticated `
+  --region europe-west6 `
+  --memory 1Gi `
+  --no-cpu-throttling `
+  --min-instances=0 `
+  --max-instances=1 `
+  --service-account="daesy-helper-bot-dev@gpch-daesy.iam.gserviceaccount.com" `
+  --set-env-vars=
 ```
+
+# Security Considerations
+Because connection to Slack is handled via Webhooks, the Cloud Run URL needs to be public (option `--allow-unauthenticated`). This is a potential security risk.
+Current mitigation measures:
+- All incoming requests are handled by Slack Bolt's AsyncApp and verified using the `SLACK_SIGNING_SECRET`.
+- (Unlikely) DDOS attacks can cause service interruptions but only limited cost spikes due to `--max-instances=1`.
