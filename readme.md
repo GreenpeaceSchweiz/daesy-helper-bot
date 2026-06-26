@@ -44,18 +44,21 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
     --role="roles/logging.logWriter"
 ```
 
+**Build the Artifact in Cloud Buil**
+`gcloud builds submit --config=cloudbuild.yaml .`
+
 **Push to Cloud Run**
 ```
 gcloud run deploy daesy-helper-bot-dev `
-  --source . `
-  --allow-unauthenticated `
+  --image="europe-west6-docker.pkg.dev/gpch-daesy/cloud-run-source-deploy/daesy-helper-bot-dev:latest" `  --allow-unauthenticated `
   --region europe-west6 `
   --memory 1Gi `
   --no-cpu-throttling `
+  --cpu-boost `
   --min-instances=0 `
   --max-instances=1 `
   --service-account="daesy-helper-bot-dev@gpch-daesy.iam.gserviceaccount.com" `
-  --set-env-vars=
+  --set-env-vars=[...]
 ```
 
 # Security Considerations
