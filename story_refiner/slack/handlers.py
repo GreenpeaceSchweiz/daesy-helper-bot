@@ -2,6 +2,7 @@ import os
 import logging
 from typing import Any
 from google.genai import types
+from story_refiner.slack.middleware import ignore_timeout_retries
 from story_refiner.slack.helpers import build_thread_context
 from story_refiner.session_utils import get_or_create_session
 
@@ -12,6 +13,10 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
     Registers event handlers to the slack app routing table using Lazy Listeners
     to prevent 3-second timeout retries on Cloud Run.
     """
+
+    # --- Register Global Middleware First ---
+    # Every incoming event passes through this before routing kicks in
+    slack_app.middleware(ignore_timeout_retries)
     
     # --- Shared Core Message Handler ---
     async def _handle_message(event: dict[str, Any], say: Any, runner: Any, thinking_ts: str):
