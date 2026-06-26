@@ -66,3 +66,8 @@ Because connection to Slack is handled via Webhooks, the Cloud Run URL needs to 
 Current mitigation measures:
 - All incoming requests are handled by Slack Bolt's AsyncApp and verified using the `SLACK_SIGNING_SECRET`.
 - (Unlikely) DDOS attacks can cause service interruptions but only limited cost spikes due to `--max-instances=1`.
+
+
+# Future Improvements
+## Introduce Context Caching
+Incurs some costs for the cache, but reduces costs for the model execution and reduces latency.
