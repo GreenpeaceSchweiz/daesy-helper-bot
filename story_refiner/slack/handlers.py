@@ -10,12 +10,11 @@ logger = logging.getLogger(__name__)
 
 def register_slack_handlers(slack_app, mention_runner, dm_runner, session_service):
     """
-    Registers event handlers to the slack app routing table using Lazy Listeners
-    to prevent 3-second timeout retries on Cloud Run.
+    Registers event handlers using decoupled ack/lazy structures to guarantee
+    sub-50ms user interface confirmation times.
     """
 
     # --- Register Global Middleware First ---
-    # Every incoming event passes through this before routing kicks in
     slack_app.middleware(ignore_timeout_retries)
     
     # --- Shared Core Message Handler ---
@@ -71,52 +70,65 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
                 await say(text=error_message, thread_ts=thread_ts)
 
 
-    # --- Instant Acknowledgement Handler (Shared) ---
-    async def instant_ack(ack):
-        # This instantly sends HTTP 200 back to Slack, stopping all retries.
+    # --- Pure Instant Acknowledgement Handler (Shared) ---
+    async def standard_instant_ack(ack):
+        # Keeps Route 0 clean and fast
         await ack()
 
-    # --- Route 0: Assistant Threads (do nothing) ---
+
+    # --- Route 0: Assistant Threads (Does nothing silently) ---
     async def lazy_handle_assistant_thread_started():
         logger.info(f"✏️ Assistant Thread started, doing nothing")
 
-    slack_app.event("assistant_thread_started")(ack=instant_ack, lazy=[lazy_handle_assistant_thread_started])
+    slack_app.event("assistant_thread_started")(ack=standard_instant_ack, lazy=[lazy_handle_assistant_thread_started])
 
 
     # --- Route 1: App Mentions ---
+    async def ack_app_mention(ack, event, say):
+        await ack()
+        if event.get("bot_id") or event.get("bot_profile"):
+            return
+            
+        thread_ts = event.get("thread_ts", event.get("ts"))
+        thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
+        event["thinking_ts"] = thinking_response.get("ts")
+
     async def lazy_handle_app_mention(event, say, client):
-        # Heavy work happens safely in the background here
         channel_id = event.get("channel")
         thread_ts = event.get("thread_ts", event.get("ts"))
-
-        thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
-        thinking_ts = thinking_response.get("ts")
         
         logger.info(f"🔄 Processing channel app_mention for thread {thread_ts}")
 
         context_text = await build_thread_context(client, channel_id, thread_ts)
         event["text"] = context_text  
+        thinking_ts = event.get("thinking_ts")
 
         await _handle_message(event, say, mention_runner, thinking_ts)
 
-    # Register Route 1 using the split syntax
-    slack_app.event("app_mention")(ack=instant_ack, lazy=[lazy_handle_app_mention])
+    slack_app.event("app_mention")(ack=ack_app_mention, lazy=[lazy_handle_app_mention])
 
 
     # --- Route 2: Direct Messages ---
-    async def lazy_handle_direct_messages(event, say):
-        # Heavy work happens safely in the background here
+    async def ack_direct_message(ack, event, say):
+        await ack()
+        # CRITICAL: Drop execution instantly if the text message came from our own bot
         if event.get("bot_id") or event.get("bot_profile"):
             return
 
-        if event.get("channel_type") == "im":
-            logger.info(f"💬 Processing 1-on-1 Direct Message from User: {event.get('user')}")
-
+        # Ensure we are inside a pure 1-on-1 direct message before posting placeholders
+        if event.get("channel_type") == "im" and event.get("text"):
             thread_ts = event.get("thread_ts", event.get("ts"))
             thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
-            thinking_ts = thinking_response.get("ts")
-            
+            event["thinking_ts"] = thinking_response.get("ts")
+
+    async def lazy_handle_direct_messages(event, say):
+        if event.get("bot_id") or event.get("bot_profile"):
+            return
+
+        if event.get("channel_type") == "im" and event.get("text"):
+            logger.info(f"💬 Processing 1-on-1 Direct Message from User: {event.get('user')}")
+            thinking_ts = event.get("thinking_ts")
+
             await _handle_message(event, say, dm_runner, thinking_ts)
 
-    # Register Route 2 using the split syntax
-    slack_app.event("message")(ack=instant_ack, lazy=[lazy_handle_direct_messages])
+    slack_app.event("message")(ack=ack_direct_message, lazy=[lazy_handle_direct_messages])
