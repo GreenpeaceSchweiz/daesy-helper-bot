@@ -9,7 +9,7 @@ from google.adk.sessions import VertexAiSessionService
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.asgi.async_handler import AsyncSlackRequestHandler
 from story_refiner.agents import interactive_agent, oneoff_agent
-from story_refiner.slack_handlers import register_slack_handlers
+from story_refiner.slack.handlers import register_slack_handlers
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

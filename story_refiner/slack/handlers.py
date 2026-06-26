@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Any
 from google.genai import types
-from story_refiner.slack_helpers import build_thread_context
+from story_refiner.slack.helpers import build_thread_context
 from story_refiner.session_utils import get_or_create_session
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 from pathlib import Path
 from google.adk.agents.llm_agent import Agent
-from story_refiner.asana import create_asana_task
+from story_refiner.services.asana import create_asana_task
 
 
 # Get the directory path where agent.py lives and read your long prompt
