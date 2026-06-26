@@ -15,7 +15,7 @@ with open(instruction_path, "r", encoding="utf-8") as f:
 # TO DO: Create subagents for new requests vs repeat/daily business tasks
 interactive_agent = Agent(
     name="user_story_refiner",
-    model="gemini-3.1-flash-lite",
+    model="gemini-3.5-flash",
     description="An expert Agile Product Owner that refines vague user inputs into strict User Stories.",
     instruction=instruction_interactive,
     # Hand the python tool to the model
@@ -24,7 +24,7 @@ interactive_agent = Agent(
 
 oneoff_agent = Agent(
     name="user_story_writer",
-    model="gemini-3.1-flash-lite",
+    model="gemini-3.5-flash",
     description="An expert Agile Product Owner that translates conversation history into strict User Stories.",
     instruction=instruction_oneoff,
     # Hand the python tool to the model
