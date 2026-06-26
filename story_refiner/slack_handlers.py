@@ -71,6 +71,12 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         # This instantly sends HTTP 200 back to Slack, stopping all retries.
         await ack()
 
+    # --- Route 0: Assistant Threads (do nothing) ---
+    async def lazy_handle_assistant_thread_started():
+        logger.info(f"✏️ Assistant Thread started, doing nothing")
+
+    slack_app.event("assistant_thread_started")(ack=instant_ack, lazy=[lazy_handle_assistant_thread_started])
+
 
     # --- Route 1: App Mentions ---
     async def lazy_handle_app_mention(event, say, client):
