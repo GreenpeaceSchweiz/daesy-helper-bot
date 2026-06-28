@@ -27,9 +27,9 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     html_description = (
         f"<body>"
         f"<h1>User Story</h1><p>{user_story}</p>"
-        f"<h1>Priority Rationale</h1><p>{priority_rationale}</p>"
-        f"<h1>Acceptance Criteria</h1><p>{acceptance_criteria}</p>"
-        f"<h1>Refinement Notes</h1><p>{refinement_notes}</p>"
+        f"<h2>Priority Rationale</h2><p>{priority_rationale}</p>"
+        f"<h2>Acceptance Criteria</h2><p>{acceptance_criteria}</p>"
+        f"<h2>Refinement Notes</h2><p>{refinement_notes}</p>"
         f"</body>"
     )
     
