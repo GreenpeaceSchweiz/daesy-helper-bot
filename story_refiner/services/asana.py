@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Define the Asana integration function
 def create_asana_task(title: str, user_story: str, priority_rationale: str, acceptance_criteria: str, refinement_notes: str) -> str:
     """
-    Creates a new user story task in Asana using the flat ApiClient syntax.
+    Creates a new user story task in Asana using the flat ApiClient syntax,
+    formatting the elements into the HTML description (html_notes).
     """
     # 1. Configure the Token
     configuration = asana.Configuration()
@@ -22,19 +22,23 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     
     project_gid = os.getenv("ASANA_PROJECT_GID") 
 
-    custom_fields_payload = {
-            os.getenv("ASANA_FIELD_GID_USER_STORY"): user_story,
-            os.getenv("ASANA_FIELD_GID_PRIORITY_RATIONALE"): priority_rationale,
-            os.getenv("ASANA_FIELD_GID_ACCEPTANCE_CRITERIA"): acceptance_criteria,
-            os.getenv("ASANA_FIELD_GID_REFINEMENT_NOTES"): refinement_notes
-        }
+    # Construct the HTML body for the description
+    # Asana requires valid, clean HTML tags for html_notes
+    html_description = (
+        f"<body>"
+        f"<h1>User Story</h1><p>{user_story}</p>"
+        f"<h1>Priority Rationale</h1><p>{priority_rationale}</p>"
+        f"<h1>Acceptance Criteria</h1><p>{acceptance_criteria}</p>"
+        f"<h1>Refinement Notes</h1><p>{refinement_notes}</p>"
+        f"</body>"
+    )
     
-    # Build the payload body
+    # Build the payload body using 'html_notes' instead of 'custom_fields'
     body = {
         "data": {
             "name": title,
             "projects": [project_gid],
-            "custom_fields": custom_fields_payload
+            "html_notes": html_description
         }
     }
 
@@ -44,8 +48,14 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
         # Send the request
         result = tasks_api_instance.create_task(body, opts)
         # Access nested key safely from dictionary response
-        task_gid = result.get('gid')
+        task_gid = result.get('data', {}).get('gid') if isinstance(result, dict) else getattr(result, 'gid', None)
+        
+        if not task_gid:
+            # Fallback handling depending on how your specific SDK version deserializes responses
+            task_gid = result.get('gid') if isinstance(result, dict) else None
+
         task_url = f"https://app.asana.com/0/{project_gid}/{task_gid}"
-        return f"Success! Task created in Asana. Task ID: {task_url}"
+        return f"Success! Task created in Asana. Task URL: {task_url}"
     except ApiException as e:
         return f"Exception when calling TasksApi->create_task: {e}\n"
+    
