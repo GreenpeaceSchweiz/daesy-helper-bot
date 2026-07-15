@@ -4,7 +4,7 @@ from typing import Any
 from google.genai import types
 from slack.middleware import ignore_timeout_retries
 from slack.helpers import build_thread_context
-from session_utils import get_or_create_session
+from session_utils import get_or_create_session, ensure_user_email_cached
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +28,18 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         if not text or not user_id or not channel_id:
             return 
 
-        session_id = await get_or_create_session(
+        # 1. Retrieve BOTH the session object and the session ID
+        session = await get_or_create_session(
             session_service, 
             app_name=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID"), 
             event=event
+        )
+        
+        await ensure_user_email_cached(
+            session=session,
+            session_service=session_service,
+            user_id=user_id,
+            slack_client=slack_app.client
         )
         
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
@@ -39,7 +47,7 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         try:
             async for chunk in runner.run_async(
                 user_id=user_id,
-                session_id=session_id,
+                session_id=session.id,
                 new_message=new_message,
             ):
                 if chunk.content and chunk.content.parts:

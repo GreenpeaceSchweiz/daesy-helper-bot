@@ -1,12 +1,13 @@
 import os
 import html
+from google.adk.tools import ToolContext
 import asana
 from asana.rest import ApiException
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def create_asana_task(title: str, user_story: str, priority_rationale: str, acceptance_criteria: str, refinement_notes: str) -> str:
+def create_asana_task(title: str, user_story: str, priority_rationale: str, acceptance_criteria: str, refinement_notes: str, tool_context: ToolContext) -> str:
     """
     Creates a new user story task in Asana using the flat ApiClient syntax,
     formatting the elements into the HTML description (html_notes).
@@ -17,11 +18,14 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     
     # Instantiate the ApiClient
     api_client = asana.ApiClient(configuration)
-    
-    # Instantiate API classes
     tasks_api_instance = asana.TasksApi(api_client)
-    
-    project_gid = os.getenv("ASANA_PROJECT_GID") 
+    project_gid = os.getenv("ASANA_PROJECT_GID")
+
+    # Retrieve the user email from the session state
+    # We use 'user:email' to scope it to this specific user across all their sessions
+    creator_email = tool_context.state.get("user:email")
+    if not creator_email:
+        return "Error: Creator email was not found in the session context."
 
     # Escape all dynamic strings to ensure perfectly safe XML
     esc_user_story = html.escape(user_story)
@@ -38,13 +42,18 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
         f"<h2>Refinement Notes</h2>{esc_refinement_notes}"
         f"</body>"
     )
+
+    custom_fields_payload = {
+        os.getenv("ASANA_FIELD_CREATOR"): creator_email
+    }
     
     # Build the payload body
     body = {
         "data": {
             "name": title,
             "projects": [project_gid],
-            "html_notes": html_description
+            "html_notes": html_description,
+            "custom_fields": custom_fields_payload
         }
     }
 
