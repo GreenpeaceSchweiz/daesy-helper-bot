@@ -1,4 +1,5 @@
 import os
+import html
 import asana
 from asana.rest import ApiException
 from dotenv import load_dotenv
@@ -10,30 +11,35 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     Creates a new user story task in Asana using the flat ApiClient syntax,
     formatting the elements into the HTML description (html_notes).
     """
-    # 1. Configure the Token
+    # Configure the Token
     configuration = asana.Configuration()
     configuration.access_token = os.getenv("ASANA_PERSONAL_ACCESS_TOKEN")
     
-    # 2. Instantiate the ApiClient without a 'with' context manager
+    # Instantiate the ApiClient
     api_client = asana.ApiClient(configuration)
     
-    # 3. Instantiate API classes
+    # Instantiate API classes
     tasks_api_instance = asana.TasksApi(api_client)
     
     project_gid = os.getenv("ASANA_PROJECT_GID") 
 
-    # Construct the HTML body for the description
-    # Asana requires valid, clean HTML tags for html_notes
+    # Escape all dynamic strings to ensure perfectly safe XML
+    esc_user_story = html.escape(user_story)
+    esc_priority_rationale = html.escape(priority_rationale)
+    esc_acceptance_criteria = html.escape(acceptance_criteria)
+    esc_refinement_notes = html.escape(refinement_notes)
+
+    # Construct the HTML body using headers and native line breaks instead of <p>
     html_description = (
         f"<body>"
-        f"<h1>User Story</h1><p>{user_story}</p>"
-        f"<h2>Priority Rationale</h2><p>{priority_rationale}</p>"
-        f"<h2>Acceptance Criteria</h2><p>{acceptance_criteria}</p>"
-        f"<h2>Refinement Notes</h2><p>{refinement_notes}</p>"
+        f"<h1>User Story</h1>{esc_user_story}\n"
+        f"<h2>Priority Rationale</h2>{esc_priority_rationale}\n"
+        f"<h2>Acceptance Criteria</h2>{esc_acceptance_criteria}\n"
+        f"<h2>Refinement Notes</h2>{esc_refinement_notes}"
         f"</body>"
     )
     
-    # Build the payload body using 'html_notes' instead of 'custom_fields'
+    # Build the payload body
     body = {
         "data": {
             "name": title,
@@ -47,15 +53,12 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     try:
         # Send the request
         result = tasks_api_instance.create_task(body, opts)
-        # Access nested key safely from dictionary response
         task_gid = result.get('data', {}).get('gid') if isinstance(result, dict) else getattr(result, 'gid', None)
         
         if not task_gid:
-            # Fallback handling depending on how your specific SDK version deserializes responses
             task_gid = result.get('gid') if isinstance(result, dict) else None
 
         task_url = f"https://app.asana.com/0/{project_gid}/{task_gid}"
         return f"Success! Task created in Asana. Task URL: {task_url}"
     except ApiException as e:
         return f"Exception when calling TasksApi->create_task: {e}\n"
-    
