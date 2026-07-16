@@ -1,7 +1,7 @@
 import json
 
 # 1. Import your existing function from your tools file
-from services.asana import create_asana_task
+from daesy_helper_bot.services.asana import create_asana_task
 
 def test_task_creation():
     print("Testing your `create_asana_task` function directly...\n")

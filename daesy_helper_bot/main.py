@@ -8,8 +8,8 @@ from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.adk.sessions import VertexAiSessionService
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.asgi.async_handler import AsyncSlackRequestHandler
-from agents import interactive_agent, oneoff_agent
-from slack.handlers import register_slack_handlers
+from daesy_helper_bot.agents.agents import interactive_agent, oneoff_agent
+from daesy_helper_bot.slack.handlers import register_slack_handlers
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -50,12 +50,16 @@ register_slack_handlers(slack_app, mention_runner=oneoff_runner, dm_runner=inter
 # 1. This is what Uvicorn looks for in production (via main:api)
 api = AsyncSlackRequestHandler(slack_app)
 
-# 2. This is ONLY triggered if you manually run `python main.py` locally
-if __name__ == "__main__":
+# Function to launch the server locally during development
+def dev():
     import uvicorn
     
     port = int(os.environ.get("PORT", 8080))
-    logger.info(f"⚡ Asana User Story Refiner Bot launching via Uvicorn on port {port}...")
+    logger.info(f"⚡ Daesy Helper Bot launching via Uvicorn on port {port}...")
     
-    # Run Uvicorn programmatically for local dev
-    uvicorn.run("main:api", host="0.0.0.0", port=port, reload=True)
+    # Point Uvicorn to the absolute import path of the ASGI 'api' application
+    uvicorn.run("daesy_helper_bot.main:api", host="0.0.0.0", port=port, reload=True)
+
+
+if __name__ == "__main__":
+    dev()

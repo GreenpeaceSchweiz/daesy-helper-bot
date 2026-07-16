@@ -24,4 +24,4 @@ COPY story_refiner /app/story_refiner
 EXPOSE 8080
 
 # Exec form prevents /bin/sh overhead for faster, cleaner execution
-CMD ["python", "-m", "uvicorn", "story_refiner.main:api", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "uvicorn", "daesy_helper_bot.main:api", "--host", "0.0.0.0", "--port", "8080"]

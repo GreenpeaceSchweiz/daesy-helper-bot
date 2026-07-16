@@ -2,9 +2,9 @@ import os
 import logging
 from typing import Any
 from google.genai import types
-from slack.middleware import ignore_timeout_retries
-from slack.helpers import build_thread_context
-from session_utils import get_or_create_session, ensure_user_email_cached
+from daesy_helper_bot.slack.middleware import ignore_timeout_retries
+from daesy_helper_bot.slack.helpers import build_thread_context
+from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached
 
 logger = logging.getLogger(__name__)
 
