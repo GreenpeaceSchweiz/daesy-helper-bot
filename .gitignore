@@ -22,8 +22,10 @@ dist/
 # ==========================================
 # ABSOLUTELY DO NOT TRACK THIS. It contains your Gemini, Asana, and Slack tokens.
 .env
+.env.prod
 .env.local
 .env.*.local
+.env*
 
 # Local deployment scripts
 deploy*.sh
