@@ -15,4 +15,4 @@ dependencies = [
 package = true
 
 [project.scripts]
-daesy-bot-dev = "daesy_helper_bot.main:dev"
+daesy-helper-bot-dev = "daesy_helper_bot.main:dev"
