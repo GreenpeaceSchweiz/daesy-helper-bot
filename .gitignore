@@ -11,6 +11,12 @@ ENV/
 *.py[cod]
 *$py.class
 
+# Python build and packaging artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+
 # ==========================================
 # Secrets & Environment Variables
 # ==========================================
