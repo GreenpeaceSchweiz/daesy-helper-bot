@@ -19,7 +19,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy ONLY what is strictly needed for production
 COPY --from=builder /app/.venv /app/.venv
-COPY story_refiner /app/story_refiner
+COPY daesy_helper_bot /app/daesy_helper_bot
 
 EXPOSE 8080
 
