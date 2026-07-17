@@ -1,9 +1,12 @@
 import os
+import logging
 import html
 from google.adk.tools import ToolContext
 import asana
 from asana.rest import ApiException
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -70,4 +73,6 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
         task_url = f"https://app.asana.com/0/{project_gid}/{task_gid}"
         return f"Success! Task created in Asana. Task URL: {task_url}"
     except ApiException as e:
+        logger.error(f"Asana API Error Payload: {e.body}")
+        logger.exception("Failed to create task")
         return f"Exception when calling TasksApi->create_task: {e}\n"
