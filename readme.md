@@ -4,6 +4,9 @@ A slack bot that interacts with users and helps them with DaESy tasks.
 Current functionality:
 - Write Asana tickets, either based on 1:1 conversations with the bot or from thread context if tagged in a message thread.
 
+# Set Up Asana App
+Use `daesy_helper_bot\slack\manifest.yaml` to set up your slack app.
+
 # Set Up Development Environment
 Follow these steps to set up your local environment for development.
 
