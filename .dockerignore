@@ -1,0 +1,44 @@
+# ==========================================
+# Git and Project Metadata
+# ==========================================
+.git
+.gitignore
+.github/
+README.md
+readme.md
+
+# ==========================================
+# Local Environment and Dependency Managers
+# ==========================================
+.venv/
+venv/
+ENV/
+.python-version
+# Note: Keep pyproject.toml and uv.lock out of this file, 
+# as the Dockerfile needs them to install dependencies!
+
+# ==========================================
+# IDEs, Editors, and OS Trash
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Python Build Artifacts & Cache
+# ==========================================
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+**/.adk/
+
+# ==========================================
+# Local Configuration and Scripts
+# ==========================================
+.env
+scripts/

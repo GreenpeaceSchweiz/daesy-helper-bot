@@ -1,0 +1,17 @@
+steps:
+  # Build the container using modern Docker with BuildKit enabled
+  - name: 'gcr.io/cloud-builders/docker'
+    env:
+      - 'DOCKER_BUILDKIT=1'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west6-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE_NAME:latest'
+      - '.'
+
+# Automatically push the finished image to Artifact Registry
+images:
+  - 'europe-west6-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/$_SERVICE_NAME:latest'
+
+options:
+  requestedVerifyOption: 'VERIFIED'

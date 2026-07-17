@@ -11,13 +11,23 @@ ENV/
 *.py[cod]
 *$py.class
 
+# Python build and packaging artifacts
+*.egg-info/
+.eggs/
+build/
+dist/
+
 # ==========================================
 # Secrets & Environment Variables
 # ==========================================
 # ABSOLUTELY DO NOT TRACK THIS. It contains your Gemini, Asana, and Slack tokens.
 .env
+.env.prod
 .env.local
 .env.*.local
+
+# Local deployment scripts
+deploy*.sh
 
 # ==========================================
 # System & IDE Files

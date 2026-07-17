@@ -1,13 +1,18 @@
 [project]
-name = "user-story-refiner"
+name = "daesy-helper-bot"
 version = "0.1.0"
-description = "Add your description here"
+description = "Slack bot that assists GPCH users with requests for the DaESy team."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
-    "aiohttp>=3.14.1",
     "asana>=5.2.5",
-    "google-adk[slack]>=2.2.0",
-    "slack-sdk>=3.42.0",
-    "websockets>=15.0.1",
+    "google-adk[gcp,slack]>=2.2.0",
+    "uvicorn>=0.49.0",
 ]
+
+# Force uv to treat this project as an installable package
+[tool.uv]
+package = true
+
+[project.scripts]
+daesy-helper-bot-dev = "daesy_helper_bot.main:dev"

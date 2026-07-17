@@ -1,0 +1,188 @@
+version: '3'
+
+# Global Project Variables
+vars:
+  PROJECT_ID: gpch-daesy
+  REGION: europe-west6
+  
+  # DYNAMIC VALUE: Queries GCP for the numeric project number on launch
+  PROJECT_NUMBER:
+    sh: gcloud projects describe {{.PROJECT_ID}} --format="value(projectNumber)"
+  
+  DEV_SERVICE: daesy-helper-bot-dev
+  DEV_SA: daesy-helper-bot-dev@gpch-daesy.iam.gserviceaccount.com
+  
+  PROD_SERVICE: daesy-helper-bot-prod
+  PROD_SA: daesy-helper-bot-prod@gpch-daesy.iam.gserviceaccount.com
+
+tasks:
+
+  # =========================================================================
+  #  1. SETUP & PROVISIONING
+  # =========================================================================
+
+  setup:all:
+    desc: Run ALL setup commands sequentially (APIs -> SAs -> Secrets)
+    cmds:
+      - task: setup:apis
+      - task: setup:sas
+      - task: setup:secrets
+
+  setup:apis:
+    desc: Enable required Google Cloud APIs for this project
+    cmds:
+      - |
+        gcloud services enable \
+          secretmanager.googleapis.com \
+          aiplatform.googleapis.com \
+          run.googleapis.com \
+          cloudbuild.googleapis.com \
+          artifactregistry.googleapis.com \
+          --project={{.PROJECT_ID}}
+
+  setup:sas:
+    desc: Create Dev & Prod Service Accounts and assign baseline platform roles
+    cmds:
+      # Create Dev Service Account
+      - gcloud iam service-accounts create daesy-helper-bot-dev --display-name="Daesy Helper Bot (Dev)" --project={{.PROJECT_ID}} || echo "Dev SA already exists"
+      
+      # Create Prod Service Account
+      - gcloud iam service-accounts create daesy-helper-bot-prod --display-name="Daesy Helper Bot (Prod)" --project={{.PROJECT_ID}} || echo "Prod SA already exists"
+      
+      # Assign 'Agent Platform User' to Dev & Prod SAs
+      - gcloud projects add-iam-policy-binding {{.PROJECT_ID}} --member="serviceAccount:{{.DEV_SA}}" --role="roles/aiplatform.user" --format="none"
+      - gcloud projects add-iam-policy-binding {{.PROJECT_ID}} --member="serviceAccount:{{.PROD_SA}}" --role="roles/aiplatform.user" --format="none"
+      
+      # Assign 'Log Writer' to Dev & Prod SAs
+      - gcloud projects add-iam-policy-binding {{.PROJECT_ID}} --member="serviceAccount:{{.DEV_SA}}" --role="roles/logging.logWriter" --format="none"
+      - gcloud projects add-iam-policy-binding {{.PROJECT_ID}} --member="serviceAccount:{{.PROD_SA}}" --role="roles/logging.logWriter" --format="none"
+
+  setup:secrets:
+    desc: Update all secrets (Dev & Prod)
+    cmds:
+      - task: setup:secrets:dev
+      - task: setup:secrets:prod
+
+  setup:secrets:dev:
+    desc: Upload dev secrets from local .env to Secret Manager and grant scoped access
+    dotenv: ['.env']
+    cmds:
+      # ASANA TOKEN
+      - echo -n "$ASANA_PERSONAL_ACCESS_TOKEN" | gcloud secrets create daesy_helper_bot_dev_asana_token --data-file=- --project={{.PROJECT_ID}} || echo -n "$ASANA_PERSONAL_ACCESS_TOKEN" | gcloud secrets versions add daesy_helper_bot_dev_asana_token --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_dev_asana_token --member="serviceAccount:{{.DEV_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # SLACK BOT TOKEN
+      - echo -n "$SLACK_BOT_TOKEN" | gcloud secrets create daesy_helper_bot_dev_slack_bot_token --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_BOT_TOKEN" | gcloud secrets versions add daesy_helper_bot_dev_slack_bot_token --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_dev_slack_bot_token --member="serviceAccount:{{.DEV_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # SLACK SIGNING SECRET
+      - echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets create daesy_helper_bot_dev_slack_signing_secret --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets versions add daesy_helper_bot_dev_slack_signing_secret --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_dev_slack_signing_secret --member="serviceAccount:{{.DEV_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+
+  setup:secrets:prod:
+    desc: Upload prod secrets from local .env.prod to Secret Manager and grant scoped access
+    dotenv: ['.env.prod']
+    cmds:
+      # ASANA TOKEN
+      - echo -n "$ASANA_PERSONAL_ACCESS_TOKEN" | gcloud secrets create daesy_helper_bot_prod_asana_token --data-file=- --project={{.PROJECT_ID}} || echo -n "$ASANA_PERSONAL_ACCESS_TOKEN" | gcloud secrets versions add daesy_helper_bot_prod_asana_token --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_prod_asana_token --member="serviceAccount:{{.PROD_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # SLACK BOT TOKEN
+      - echo -n "$SLACK_BOT_TOKEN" | gcloud secrets create daesy_helper_bot_prod_slack_bot_token --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_BOT_TOKEN" | gcloud secrets versions add daesy_helper_bot_prod_slack_bot_token --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_prod_slack_bot_token --member="serviceAccount:{{.PROD_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # SLACK SIGNING SECRET
+      - echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets create daesy_helper_bot_prod_slack_signing_secret --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets versions add daesy_helper_bot_prod_slack_signing_secret --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_prod_slack_signing_secret --member="serviceAccount:{{.PROD_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+
+
+  # =========================================================================
+  #  2. DEVELOPMENT ENVIRONMENT (DEV)
+  # =========================================================================
+
+  dev:local:
+    desc: Run the dev app locally using uv and local .env secrets
+    dotenv: ['.env']
+    cmds:
+      - uv run daesy-helper-bot-dev
+  
+  dev:tunnel:
+    desc: Start the ngrok tunnel
+    cmds:
+      - ngrok http 8080
+
+  dev:build:
+    desc: Submit Dev Build to Google Cloud Build
+    cmds:
+      - gcloud builds submit --config=cloudbuild.yaml --substitutions=_SERVICE_NAME={{.DEV_SERVICE}} --project={{.PROJECT_ID}} .
+
+  dev:deploy:
+    desc: Deploy Dev Artifact to Cloud Run (Secured with dev-scoped secrets)
+    dotenv: ['.env']
+    cmds:
+      - |
+        gcloud run deploy {{.DEV_SERVICE}} \
+          --image="{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/cloud-run-source-deploy/{{.DEV_SERVICE}}:latest" \
+          --allow-unauthenticated \
+          --region={{.REGION}} \
+          --memory=1Gi \
+          --no-cpu-throttling \
+          --cpu-boost \
+          --min-instances=0 \
+          --max-instances=1 \
+          --clear-base-image \
+          --service-account="{{.DEV_SA}}" \
+          --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT=${ASANA_PROJECT},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
+          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_dev_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_dev_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_dev_slack_signing_secret:latest"
+
+  dev:ship:
+    desc: Build and Deploy the Dev environment to Google Cloud
+    cmds:
+      - task: dev:build
+      - task: dev:deploy
+
+
+  # =========================================================================
+  #  3. PRODUCTION ENVIRONMENT (PROD)
+  # =========================================================================
+
+  prod:build:
+    desc: Submit Prod Build to Google Cloud Build
+    cmds:
+      - gcloud builds submit --config=cloudbuild.yaml --substitutions=_SERVICE_NAME={{.PROD_SERVICE}} --project={{.PROJECT_ID}} .
+
+  prod:deploy:
+    desc: Deploy Prod Artifact to Cloud Run (Secured with prod-scoped secrets)
+    dotenv: ['.env.prod']
+    cmds:
+      - |
+        gcloud run deploy {{.PROD_SERVICE}} \
+          --image="{{.REGION}}-docker.pkg.dev/{{.PROJECT_ID}}/cloud-run-source-deploy/{{.PROD_SERVICE}}:latest" \
+          --allow-unauthenticated \
+          --region={{.REGION}} \
+          --memory=1Gi \
+          --no-cpu-throttling \
+          --cpu-boost \
+          --min-instances=0 \
+          --max-instances=1 \
+          --clear-base-image \
+          --service-account="{{.PROD_SA}}" \
+          --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT=${ASANA_PROJECT},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
+          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_prod_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_prod_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_prod_slack_signing_secret:latest"
+
+  prod:ship:
+    desc: Build and Deploy the Prod environment to Google Cloud
+    cmds:
+      - task: prod:build
+      - task: prod:deploy
+
+
+  # =========================================================================
+  #  4. GLOBAL ORCHESTRATION
+  # =========================================================================
+
+  ship:all:
+    desc: Build and Deploy BOTH Dev and Prod environments to Google Cloud
+    cmds:
+      - task: dev:ship
+      - task: prod:ship

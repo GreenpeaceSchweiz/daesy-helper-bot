@@ -1,0 +1,2 @@
+# Delete the service to prevent any unwanted usage or access (does not delete the artifact in the registry)
+gcloud run services delete daesy-helper-bot-dev --region=europe-west6
