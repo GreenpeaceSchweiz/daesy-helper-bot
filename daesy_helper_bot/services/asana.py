@@ -19,7 +19,7 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     # Instantiate the ApiClient
     api_client = asana.ApiClient(configuration)
     tasks_api_instance = asana.TasksApi(api_client)
-    project_gid = os.getenv("ASANA_PROJECT_GID")
+    project_gid = os.getenv("ASANA_PROJECT")
 
     # Retrieve the user email from the session state
     # We use 'user:email' to scope it to this specific user across all their sessions
