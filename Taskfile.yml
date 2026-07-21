@@ -141,6 +141,18 @@ tasks:
       - task: dev:build
       - task: dev:deploy
 
+  dev:refresh:
+    desc: Update secrets and force Cloud Run to deploy a new revision (without rebuilding)
+    cmds:
+      - task: setup:secrets:dev
+      - task: dev:deploy
+
+  prod:refresh:
+    desc: Update secrets and force Cloud Run to deploy a new revision (without rebuilding)
+    cmds:
+      - task: setup:secrets:prod
+      - task: prod:deploy
+
 
   # =========================================================================
   #  3. PRODUCTION ENVIRONMENT (PROD)
@@ -186,3 +198,9 @@ tasks:
     cmds:
       - task: dev:ship
       - task: prod:ship
+
+  refresh:all:
+    desc: Update BOTH Dev and Prod Secrets and update the deployments
+    cmds:
+      - task: dev:refresh
+      - task: prod:refresh
