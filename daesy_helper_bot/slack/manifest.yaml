@@ -10,7 +10,13 @@ display_information:
 
     -  If you message the bot directly, it will ask clarifying questions and write a full DaESy ticket for your request.\r
 
-    -  If you mention the bot in a thread where an issue has already been discussed, it will gather all the available context and immediately write a ticket for you without asking any follow up questions."
+    -  If you mention the bot in a thread where an issue has already been discussed - it will gather all the available context and immediately write a ticket for you without asking any follow up questions.\r
+
+    \r
+
+    *Note*\r
+
+    The bot's memory is limited to individual message threads. If you want to continue an ongoing conversation with the bot, make sure to reply in the thread. If you want to start a new conversation about a new topic, just send it a new message or tag it in a new thread."
 features:
   app_home:
     home_tab_enabled: false
