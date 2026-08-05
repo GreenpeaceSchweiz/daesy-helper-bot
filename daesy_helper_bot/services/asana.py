@@ -30,19 +30,13 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     if not creator_email:
         return "Error: Creator email was not found in the session context."
 
-    # Escape all dynamic strings to ensure perfectly safe XML
-    esc_user_story = html.escape(user_story)
-    esc_priority_rationale = html.escape(priority_rationale)
-    esc_acceptance_criteria = html.escape(acceptance_criteria)
-    esc_refinement_notes = html.escape(refinement_notes)
-
     # Construct the HTML body using headers and native line breaks instead of <p>
     html_description = (
         f"<body>"
-        f"<h1>User Story</h1>{esc_user_story}\n"
-        f"<h2>Priority Rationale</h2>{esc_priority_rationale}\n"
-        f"<h2>Acceptance Criteria</h2>{esc_acceptance_criteria}\n"
-        f"<h2>Refinement Notes</h2>{esc_refinement_notes}"
+        f"<h1>User Story</h1>{user_story}\n"
+        f"<h2>Priority Rationale</h2>{priority_rationale}\n"
+        f"<h2>Acceptance Criteria</h2>{acceptance_criteria}\n"
+        f"<h2>Refinement Notes</h2>{refinement_notes}"
         f"</body>"
     )
 

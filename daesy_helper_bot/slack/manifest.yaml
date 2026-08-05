@@ -1,0 +1,55 @@
+display_information:
+  name: DaESy Helper
+  description: Helps you with DaESy requests
+  background_color: "#004b00"
+  long_description: "This friendly agent assists you with your requests for the DaESy circle. Right now, it has the following capabilities:\r
+
+    \r
+
+    *Write Tickets*\r
+
+    -  If you message the agent directly, it will ask clarifying questions and write a full DaESy ticket for your request.\r
+
+    -  If you mention the agent in a thread where an issue has already been discussed - it will gather all the available context and immediately write a ticket for you without asking any follow up questions.\r
+
+    \r
+
+    *Note*\r
+
+    The agent's memory is limited to individual message threads. If you want to continue an ongoing conversation with the agent, make sure to reply in the thread. If you want to start a new conversation about a new topic, just send it a new message or tag it in a new thread."
+features:
+  app_home:
+    home_tab_enabled: false
+    messages_tab_enabled: true
+    messages_tab_read_only_enabled: false
+  bot_user:
+    display_name: DaESy Helper
+    always_online: true
+  agent_view:
+    suggested_prompts: []
+oauth_config:
+  scopes:
+    bot:
+      - users:read.email
+      - users:read
+      - app_mentions:read
+      - assistant:write
+      - channels:history
+      - chat:write
+      - groups:history
+      - groups:write
+      - im:history
+      - im:write
+      - mpim:history
+  pkce_enabled: false
+settings:
+  event_subscriptions:
+    request_url: [replace with correct url]
+    bot_events:
+      - app_mention
+      - assistant_thread_started
+      - message.im
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+  is_mcp_enabled: false
