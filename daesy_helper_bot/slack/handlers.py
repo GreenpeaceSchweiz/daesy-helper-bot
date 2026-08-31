@@ -3,7 +3,7 @@ import logging
 from typing import Any
 from google.genai import types
 from daesy_helper_bot.slack.middleware import ignore_timeout_retries
-from daesy_helper_bot.slack.helpers import build_thread_context
+from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
 from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
     slack_app.middleware(ignore_timeout_retries)
     
     # --- Shared Core Message Handler ---
-    async def _handle_message(event: dict[str, Any], say: Any, runner: Any, thinking_ts: str):
+    async def _handle_message(event: dict[str, Any], say: Any, runner: Any):
         text = event.get("text", "")
         user_id = event.get("user")
         channel_id = event.get("channel")
@@ -28,7 +28,6 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         if not text or not user_id or not channel_id:
             return 
 
-        # 1. Retrieve BOTH the session object and the session ID
         session = await get_or_create_session(
             session_service, 
             app_name=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID"), 
@@ -53,30 +52,13 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
                 if chunk.content and chunk.content.parts:
                     for part in chunk.content.parts:
                         if part.text:
-                            if thinking_ts:
-                                await slack_app.client.chat_update(
-                                    channel=channel_id,
-                                    ts=thinking_ts,
-                                    text=part.text,
-                                )
-                                thinking_ts = None
-                            else:
-                                await say(text=part.text, thread_ts=thread_ts)
-                                
-            if thinking_ts:
-                await slack_app.client.chat_delete(channel=channel_id, ts=thinking_ts)
+                            # Posting the message automatically clears the setStatus indicator in Slack
+                            await say(text=part.text, thread_ts=thread_ts)
                 
         except Exception as e:
             error_message = f"Sorry, I encountered an error: {str(e)}"
             logger.exception("Error running ADK agent for Slack:")
-            if thinking_ts:
-                await slack_app.client.chat_update(
-                    channel=channel_id,
-                    ts=thinking_ts,
-                    text=error_message,
-                )
-            else:
-                await say(text=error_message, thread_ts=thread_ts)
+            await say(text=error_message, thread_ts=thread_ts)
 
 
     # --- Instant Acknowledgement Handler (Shared) ---
@@ -93,38 +75,48 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
 
     # --- Route 1: App Mentions ---
     async def lazy_handle_app_mention(event, say, client):
-        # Heavy work happens safely in the background here
         channel_id = event.get("channel")
         thread_ts = event.get("thread_ts", event.get("ts"))
 
-        thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
-        thinking_ts = thinking_response.get("ts")
+        # Set native Slack status loading state
+        await client.assistant_threads_setStatus(
+            channel_id=channel_id,
+            thread_ts=thread_ts,
+            status="is thinking...",
+            loading_messages=get_loading_messages()
+        )
         
         logger.info(f"🔄 Processing channel app_mention for thread {thread_ts}")
 
         context_text = await build_thread_context(client, channel_id, thread_ts)
         event["text"] = context_text  
 
-        await _handle_message(event, say, mention_runner, thinking_ts)
+        await _handle_message(event, say, mention_runner)
 
     # Register Route 1 using the split syntax
     slack_app.event("app_mention")(ack=instant_ack, lazy=[lazy_handle_app_mention])
 
 
     # --- Route 2: Direct Messages ---
-    async def lazy_handle_direct_messages(event, say):
-        # Heavy work happens safely in the background here
+    async def lazy_handle_direct_messages(event, say, client):
         if event.get("bot_id") or event.get("bot_profile"):
             return
 
         if event.get("channel_type") == "im":
             logger.info(f"💬 Processing 1-on-1 Direct Message from User: {event.get('user')}")
 
+            channel_id = event.get("channel")
             thread_ts = event.get("thread_ts", event.get("ts"))
-            thinking_response = await say(text="_Thinking..._", thread_ts=thread_ts)
-            thinking_ts = thinking_response.get("ts")
+
+            # Set native Slack status loading state
+            await client.assistant_threads_setStatus(
+                channel_id=channel_id,
+                thread_ts=thread_ts,
+                status="thinking...",
+                loading_messages=get_loading_messages()
+            )
             
-            await _handle_message(event, say, dm_runner, thinking_ts)
+            await _handle_message(event, say, dm_runner)
 
     # Register Route 2 using the split syntax
     slack_app.event("message")(ack=instant_ack, lazy=[lazy_handle_direct_messages])
