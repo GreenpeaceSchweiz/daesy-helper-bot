@@ -4,7 +4,7 @@ from typing import Any
 from google.genai import types
 from daesy_helper_bot.slack.middleware import ignore_timeout_retries
 from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
-from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached
+from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached, invalidate_session_cache
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,8 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
                             await say(text=part.text, thread_ts=thread_ts)
                 
         except Exception as e:
+            invalidate_session_cache(session.id)
+
             error_message = f"Sorry, I encountered an error: {str(e)}"
             logger.exception("Error running ADK agent for Slack:")
             await say(text=error_message, thread_ts=thread_ts)
