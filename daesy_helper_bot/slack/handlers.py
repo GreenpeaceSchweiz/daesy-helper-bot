@@ -6,6 +6,8 @@ from daesy_helper_bot.slack.middleware import ignore_timeout_retries
 from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
 from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached, invalidate_session_cache
 
+import time
+
 logger = logging.getLogger(__name__)
 
 def register_slack_handlers(slack_app, mention_runner, dm_runner, session_service):
@@ -28,27 +30,33 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         if not text or not user_id or not channel_id:
             return 
 
-        session = await get_or_create_session(
-            session_service, 
-            app_name=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID"), 
-            event=event
-        )
-        
-        await ensure_user_email_cached(
-            session=session,
-            session_service=session_service,
-            user_id=user_id,
-            slack_client=slack_app.client
-        )
-        
+        t_start = time.perf_counter()
+    
+        # 1. Session Load
+        t0 = time.perf_counter()
+        session = await get_or_create_session(session_service, app_name=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID"), event=event)
+        logger.info(f"⏱️ [PERF] Session load: {time.perf_counter() - t0:.3f}s")
+
+        # 2. Email Cache Check
+        t1 = time.perf_counter()
+        await ensure_user_email_cached(session=session, session_service=session_service, user_id=user_id, slack_client=slack_app.client)
+        logger.info(f"⏱️ [PERF] Email check: {time.perf_counter() - t1:.3f}s")
+
+        # 3. Message Prep
+        t2 = time.perf_counter()
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
-        
+        logger.info(f"⏱️ [PERF] Content prep: {time.perf_counter() - t2:.3f}s")
+
+        # 4. Runner Initialization & First Chunk
+        t3 = time.perf_counter()
         try:
-            async for chunk in runner.run_async(
-                user_id=user_id,
-                session_id=session.id,
-                new_message=new_message,
-            ):
+            first_chunk = True
+            logger.info(f"⏱️ [PERF] Entering runner.run_async at {time.perf_counter():.3f}")
+            async for chunk in runner.run_async(user_id=user_id, session_id=session.id, new_message=new_message):
+                logger.info(f"⏱️ [PERF] First generator yield received at {time.perf_counter():.3f}")
+                if first_chunk:
+                    logger.info(f"⏱️ [PERF] Time to first runner output: {time.perf_counter() - t3:.3f}s")
+                    first_chunk = False
                 if chunk.content and chunk.content.parts:
                     for part in chunk.content.parts:
                         if part.text:

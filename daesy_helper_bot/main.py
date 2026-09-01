@@ -3,9 +3,9 @@ import logging
 from dotenv import load_dotenv
 
 from google.adk.runners import Runner
-from google.adk.sessions.in_memory_session_service import InMemorySessionService
 
-from google.adk.sessions import VertexAiSessionService
+
+from daesy_helper_bot.session_utils import CachedVertexAiSessionService
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.adapter.asgi.async_handler import AsyncSlackRequestHandler
 from daesy_helper_bot.agents.agents import interactive_agent, oneoff_agent
@@ -18,7 +18,7 @@ load_dotenv()
 
 
 # 1. Initialize State Frameworks
-session_service = VertexAiSessionService(
+session_service = CachedVertexAiSessionService(
     project=os.environ.get("GOOGLE_CLOUD_PROJECT"),
     location=os.environ.get("GOOGLE_CLOUD_LOCATION", "eu"),
     agent_engine_id=os.environ.get("GOOGLE_CLOUD_AGENT_ENGINE_ID")
