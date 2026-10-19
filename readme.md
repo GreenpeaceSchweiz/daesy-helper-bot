@@ -10,6 +10,9 @@ An AI agent that interacts with users via Slack and helps them with DaESy tasks.
 
 ![Schematic Overview of Agent Logic](docs/UxFlow.png)
 
+![Schematic Overview of Agent Orchestration](docs/Orchestration.png)
+
+
 ## Architecture
 
 The agent consists of the following components:
@@ -22,7 +25,8 @@ The agent consists of the following components:
 
 * **State Management:** Vertex AI Session Service
 
-![Schematic Overview of Agent Orchestration](docs/Orchestration.png)
+![Schematic Overview of Deployment Infrastructure and Security Concerns](docs/InfrastructureSecurity.png)
+
 
 ## Prerequisites
 
@@ -123,5 +127,3 @@ Because the connection to Slack is handled via Webhooks, the Cloud Run URL must 
 * **Cost Control:** While DDOS attacks can cause service interruptions, cost spikes are heavily limited by setting `--max-instances=2` on the Cloud Run service.
 
 * **IP Allowlisting (Optional):** You can configure a Web Application Firewall (e.g., Google Cloud Armor) to only allow incoming requests from known Slack IP addresses.
-
-![Schematic Overview of Deployment Infrastructure and Security Concerns](docs/InfrastructureSecurity.png)
