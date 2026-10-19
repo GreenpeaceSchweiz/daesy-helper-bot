@@ -8,6 +8,8 @@ An AI agent that interacts with users via Slack and helps them with DaESy tasks.
 
 * Writes Asana tickets based on 1:1 conversations with the bot or from thread context if the bot is tagged in a message thread.
 
+![Schematic Overview of Agent Logic](docs/UxFlow.png)
+
 ## Architecture
 
 The agent consists of the following components:
@@ -20,29 +22,7 @@ The agent consists of the following components:
 
 * **State Management:** Vertex AI Session Service
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User
-    participant Slack as Slack App
-    participant App as Agent Orchestrator
-    participant Vertex as Vertex AI (Gemini + Session)
-    participant Asana as Asana API
-
-    loop Conversational Loop (Multi-Turn Clarification)
-        User->>Slack: Send message / thread reply
-        Slack->>App: Webhook event (Async Bolt)
-        App->>Vertex: Process turn (Fetch Session Memory + Prompt Gemini)
-        Vertex-->>App: Generated response / Clarifying question
-        App->>Slack: Send thread reply back to user
-    end
-
-    opt Ticket Details Complete / User Requests Creation
-        Vertex-->>App: Tool Call: Create Asana Ticket
-        App->>Asana: Create ticket in project
-        App->>Slack: Post confirmation thread with ticket link
-    end
-```
+![Schematic Overview of Agent Orchestration](docs/Orchestration.png)
 
 ## Prerequisites
 
@@ -140,6 +120,8 @@ Because the connection to Slack is handled via Webhooks, the Cloud Run URL must 
 
 * **Request Verification:** All incoming requests are handled by Slack Bolt's `AsyncApp` and strictly verified using the `SLACK_SIGNING_SECRET`.
 
-* **Cost Control:** While DDOS attacks can cause service interruptions, cost spikes are heavily limited by setting `--max-instances=1` on the Cloud Run service.
+* **Cost Control:** While DDOS attacks can cause service interruptions, cost spikes are heavily limited by setting `--max-instances=2` on the Cloud Run service.
 
 * **IP Allowlisting (Optional):** You can configure a Web Application Firewall (e.g., Google Cloud Armor) to only allow incoming requests from known Slack IP addresses.
+
+![Schematic Overview of Deployment Infrastructure and Security Concerns](docs/InfrastructureSecurity.png)

@@ -129,7 +129,7 @@ tasks:
           --no-cpu-throttling \
           --cpu-boost \
           --min-instances=0 \
-          --max-instances=1 \
+          --max-instances=2 \
           --clear-base-image \
           --service-account="{{.DEV_SA}}" \
           --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT=${ASANA_PROJECT},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
@@ -176,7 +176,7 @@ tasks:
           --no-cpu-throttling \
           --cpu-boost \
           --min-instances=0 \
-          --max-instances=1 \
+          --max-instances=2 \
           --clear-base-image \
           --service-account="{{.PROD_SA}}" \
           --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT=${ASANA_PROJECT},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
