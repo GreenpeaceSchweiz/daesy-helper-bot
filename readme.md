@@ -4,6 +4,8 @@ An AI agent that interacts with users via Slack and helps them with DaESy tasks.
 Current functionality:
 - Write Asana tickets, either based on 1:1 conversations with the bot or from thread context if tagged in a message thread.
 
+![Schematic Overview of Agent Logic](docs/UxFlow.png)
+
 # Architecture
 The agent consists of the following elements:
 - UI Layers: Slack App (interactive), Asana (output only)
@@ -11,7 +13,13 @@ The agent consists of the following elements:
 - LLM: Gemini via Vertex AI API [aiplatform.googleapis.com]
 - Session Service: Vertex AI Session Service [aiplatform.googleapis.com]
 
+![Schematic Overview of Agent Orchestration](docs/Orchestration.png)
+
+
 # Set Up and Deployment
+
+![Schematic Overview of Deployment Infrastructure and Security Concerns](docs/InfrastructureSecurity.png)
+
 ## Development Environment
 Follow these steps to set up your local environment for development.
 
@@ -43,5 +51,5 @@ More fine-grained tasks are available. See `Taskfile.yml`.
 Because connection to Slack is handled via Webhooks, the Cloud Run URL needs to be public (option `--allow-unauthenticated`). This is a potential security risk.
 Mitigation measures:
 - All incoming requests are handled by Slack Bolt's AsyncApp and verified using the `SLACK_SIGNING_SECRET`.
-- (Unlikely) DDOS attacks can cause service interruptions but only limited cost spikes due to `--max-instances=1`.
+- (Unlikely) DDOS attacks can cause service interruptions but only limited cost spikes due to `--max-instances=2`.
 - (Optional) Configure a WAF (i.e. Google Cloud Armor) to only allow through requests from known Slack IPs.
