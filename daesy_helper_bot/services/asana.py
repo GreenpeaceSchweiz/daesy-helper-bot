@@ -2,14 +2,78 @@ import os
 import logging
 import html
 import re
+from concurrent.futures import ThreadPoolExecutor
 from google.adk.tools import ToolContext
 import asana
 from asana.rest import ApiException
 from dotenv import load_dotenv
+from urllib3.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+def search_asana_tasks(search_terms: list[str]) -> dict:
+    """Search the configured Asana project for up to four alternative terms.
+
+    Results are candidates, not confirmed duplicates. Search is eventually
+    consistent and may miss tasks; matched terms are not semantic scores.
+    """
+    if not search_terms or len(search_terms) > 4 or any(not term.strip() for term in search_terms):
+        return {"status": "error", "error": "Provide 1 to 4 non-empty search terms."}
+    token = os.getenv("ASANA_PERSONAL_ACCESS_TOKEN")
+    project = os.getenv("ASANA_PROJECT_LOOKUP")
+    workspace = os.getenv("ASANA_WORKSPACE")
+    if not token or not project or not workspace:
+        return {"status": "error", "error": "Set ASANA_PERSONAL_ACCESS_TOKEN, ASANA_PROJECT_LOOKUP and ASANA_WORKSPACE."}
+
+    configuration = asana.Configuration()
+    configuration.access_token = token
+    configuration.return_page_iterator = False
+    configuration.retry_strategy = False
+    client = asana.ApiClient(configuration)
+    tasks_api = asana.TasksApi(client)
+    terms = list(dict.fromkeys(term.strip() for term in search_terms))
+
+    def search(term):
+        return tasks_api.search_tasks_for_workspace(workspace, {
+            "text": term, "projects.any": project, "limit": 25, "sort_by": "relevance",
+            "opt_fields": "name,notes,permalink_url,completed,modified_at",
+        }, _request_timeout=10)["data"]
+
+    try:
+        with ThreadPoolExecutor(max_workers=len(terms)) as executor:
+            results = list(executor.map(search, terms))
+        tasks = {}
+        for term, hits in zip(terms, results):
+            for task in hits:
+                gid = task["gid"]
+                if gid not in tasks:
+                    notes = task.get("notes") or ""
+                    tasks[gid] = {
+                        "gid": gid, "name": task.get("name"), "url": task.get("permalink_url"),
+                        "completed": task.get("completed"), "modified_at": task.get("modified_at"),
+                        "description_excerpt": notes[:800], "description_truncated": len(notes) > 800,
+                        "matched_terms": [],
+                    }
+                tasks[gid]["matched_terms"].append(term)
+        ranked = sorted(tasks.values(), key=lambda task: -len(task["matched_terms"]))
+        return {
+            "status": "ok", "tasks": ranked[:10],
+            "results_truncated": len(ranked) > 10 or any(len(hits) >= 25 for hits in results),
+        }
+    except (ApiException, HTTPError, OSError, TimeoutError) as error:
+        if isinstance(error, ApiException) and error.status == 0:
+            message = "Asana search failed: TLS error. Check your trusted certificates and network connection."
+        else:
+            message = f"Asana search failed (HTTP {error.status})." if isinstance(error, ApiException) else "Asana search failed: connection error or timeout."
+        logger.warning(message)
+        return {"status": "error", "error": message}
+    finally:
+        if hasattr(client, "pool"):
+            client.pool.close()
+            client.pool.join()
+
 
 def create_asana_task(title: str, user_story: str, priority_rationale: str, acceptance_criteria: str, refinement_notes: str, tool_context: ToolContext) -> str:
     """
@@ -23,7 +87,7 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
     # Instantiate the ApiClient
     api_client = asana.ApiClient(configuration)
     tasks_api_instance = asana.TasksApi(api_client)
-    project_gid = os.getenv("ASANA_PROJECT")
+    project_gid = os.getenv("ASANA_PROJECT_INTAKE")
 
     # Retrieve the user email from the session state
     # We use 'user:email' to scope it to this specific user across all their sessions
