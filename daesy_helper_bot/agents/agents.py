@@ -1,6 +1,6 @@
 from pathlib import Path
 from google.adk.agents.llm_agent import Agent
-from daesy_helper_bot.services.asana import create_asana_task
+from daesy_helper_bot.services.asana import create_asana_task, search_asana_tasks
 
 
 # Get the directory path where agent.py lives and read your long prompt
@@ -19,7 +19,7 @@ interactive_agent = Agent(
     description="An expert Agile Product Owner that refines vague user inputs into strict User Stories.",
     instruction=instruction_interactive,
     # Hand the python tool to the model
-    tools=[create_asana_task] 
+    tools=[create_asana_task, search_asana_tasks] 
 )
 
 oneoff_agent = Agent(
