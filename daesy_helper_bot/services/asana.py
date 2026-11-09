@@ -107,6 +107,7 @@ def create_asana_task(title: str, user_story: str, priority_rationale: str, acce
         f"<h1>User Story</h1>{fmt_story}\n"
         f"<h2>Priority Rationale</h2>{fmt_priority}\n"
         f"<h2>Acceptance Criteria</h2>{fmt_ac}\n"
+        f"<em>Additionally, refer also to our <a href=\"https://greennet.elium.com/tile/view/6974#h.62bb66c469d5\">Definition of Done</a>.</em>\n"
         f"<h2>Refinement Notes</h2>{fmt_notes}"
         f"</body>"
     )
