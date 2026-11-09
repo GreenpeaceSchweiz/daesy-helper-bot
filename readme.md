@@ -58,6 +58,11 @@ Before setting up the project, ensure you have the following installed:
 3. **Environment Configuration:**
    Create an `.env` file based on `.env.example`. You will need to complete it with secrets for your Slack App, Asana Project, and GCP environment. 
 
+   The Asana search service also needs `ASANA_WORKSPACE`, the workspace GID
+   containing `ASANA_PROJECT_LOOKUP`. The token must have access to that project,
+   including its tasks and stories. Asana workspace search requires a
+   qualifying paid workspace or user.
+
 4. **Google Cloud Authentication:**
    Authenticate your local machine to interact with Vertex AI:
 
@@ -87,6 +92,7 @@ Before setting up the project, ensure you have the following installed:
 > * In `main.py`, adjust the session service code.
 >
 > * In your `.env` file, set `GEMINI_API_KEY=[your_key]` and `GOOGLE_GENAI_USE_VERTEXAI=FALSE`.
+
 
 ## Slack App Setup
 
