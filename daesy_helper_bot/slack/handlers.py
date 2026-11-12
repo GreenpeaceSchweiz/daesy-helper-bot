@@ -4,7 +4,7 @@ from typing import Any
 from google.genai import types
 from daesy_helper_bot.slack.middleware import ignore_timeout_retries
 from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
-from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached
+from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached, ensure_user_roles_cached
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +34,23 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
             event=event
         )
         
-        await ensure_user_email_cached(
+        # Fetch and cache user email
+        user_email = await ensure_user_email_cached(
             session=session,
             session_service=session_service,
             user_id=user_id,
             slack_client=slack_app.client
         )
+        
+        # Fetch and cache user roles from Peerdom
+        peerdom_api_key = os.environ.get("PEERDOM_API_KEY")
+        if user_email and peerdom_api_key:
+            await ensure_user_roles_cached(
+                session=session,
+                session_service=session_service,
+                user_email=user_email,
+                peerdom_api_key=peerdom_api_key
+            )
         
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
         
