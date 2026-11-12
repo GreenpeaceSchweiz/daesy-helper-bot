@@ -4,7 +4,7 @@ from typing import Any
 from google.genai import types
 from daesy_helper_bot.slack.middleware import ignore_timeout_retries
 from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
-from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_email_cached, ensure_user_roles_cached
+from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_slack_info_cached, ensure_user_roles_cached
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
             event=event
         )
         
-        # Fetch and cache user email
-        user_email = await ensure_user_email_cached(
+        # Fetch and cache user email and name from Slack
+        user_email, user_name = await ensure_user_slack_info_cached(
             session=session,
             session_service=session_service,
             user_id=user_id,
