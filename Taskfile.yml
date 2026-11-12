@@ -78,6 +78,10 @@ tasks:
       # SLACK SIGNING SECRET
       - echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets create daesy_helper_bot_dev_slack_signing_secret --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets versions add daesy_helper_bot_dev_slack_signing_secret --data-file=- --project={{.PROJECT_ID}}
       - gcloud secrets add-iam-policy-binding daesy_helper_bot_dev_slack_signing_secret --member="serviceAccount:{{.DEV_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # PEERDOM API KEY
+      - echo -n "$PEERDOM_API_KEY" | gcloud secrets create daesy_helper_bot_dev_peerdom_api_key --data-file=- --project={{.PROJECT_ID}} || echo -n "$PEERDOM_API_KEY" | gcloud secrets versions add daesy_helper_bot_dev_peerdom_api_key --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_dev_peerdom_api_key --member="serviceAccount:{{.DEV_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
 
   setup:secrets:prod:
     desc: Upload prod secrets from local .env.prod to Secret Manager and grant scoped access
@@ -94,6 +98,10 @@ tasks:
       # SLACK SIGNING SECRET
       - echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets create daesy_helper_bot_prod_slack_signing_secret --data-file=- --project={{.PROJECT_ID}} || echo -n "$SLACK_SIGNING_SECRET" | gcloud secrets versions add daesy_helper_bot_prod_slack_signing_secret --data-file=- --project={{.PROJECT_ID}}
       - gcloud secrets add-iam-policy-binding daesy_helper_bot_prod_slack_signing_secret --member="serviceAccount:{{.PROD_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
+      
+      # PEERDOM API KEY
+      - echo -n "$PEERDOM_API_KEY" | gcloud secrets create daesy_helper_bot_prod_peerdom_api_key --data-file=- --project={{.PROJECT_ID}} || echo -n "$PEERDOM_API_KEY" | gcloud secrets versions add daesy_helper_bot_prod_peerdom_api_key --data-file=- --project={{.PROJECT_ID}}
+      - gcloud secrets add-iam-policy-binding daesy_helper_bot_prod_peerdom_api_key --member="serviceAccount:{{.PROD_SA}}" --role="roles/secretmanager.secretAccessor" --project={{.PROJECT_ID}} --format="none"
 
 
   # =========================================================================
@@ -133,7 +141,7 @@ tasks:
           --clear-base-image \
           --service-account="{{.DEV_SA}}" \
           --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT_INTAKE=${ASANA_PROJECT_INTAKE},ASANA_PROJECT_LOOKUP=${ASANA_PROJECT_LOOKUP},ASANA_WORKSPACE=${ASANA_WORKSPACE},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
-          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_dev_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_dev_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_dev_slack_signing_secret:latest"
+          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_dev_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_dev_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_dev_slack_signing_secret:latest,PEERDOM_API_KEY=daesy_helper_bot_dev_peerdom_api_key:latest"
 
   dev:ship:
     desc: Build and Deploy the Dev environment to Google Cloud
@@ -180,7 +188,7 @@ tasks:
           --clear-base-image \
           --service-account="{{.PROD_SA}}" \
           --set-env-vars="GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI},GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION},GOOGLE_CLOUD_AGENT_ENGINE_ID=${GOOGLE_CLOUD_AGENT_ENGINE_ID},ASANA_PROJECT_INTAKE=${ASANA_PROJECT_INTAKE},ASANA_PROJECT_LOOKUP=${ASANA_PROJECT_LOOKUP},ASANA_WORKSPACE=${ASANA_WORKSPACE},ASANA_FIELD_CREATOR=${ASANA_FIELD_CREATOR}" \
-          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_prod_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_prod_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_prod_slack_signing_secret:latest"
+          --set-secrets="ASANA_PERSONAL_ACCESS_TOKEN=daesy_helper_bot_prod_asana_token:latest,SLACK_BOT_TOKEN=daesy_helper_bot_prod_slack_bot_token:latest,SLACK_SIGNING_SECRET=daesy_helper_bot_prod_slack_signing_secret:latest,PEERDOM_API_KEY=daesy_helper_bot_prod_peerdom_api_key:latest"
 
   prod:ship:
     desc: Build and Deploy the Prod environment to Google Cloud

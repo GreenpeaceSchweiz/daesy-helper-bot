@@ -17,7 +17,7 @@ An AI agent that interacts with users via Slack and helps them with DaESy tasks.
 
 The agent consists of the following components:
 
-* **Interfaces & Integrations:** Slack App (User Client), Asana (Output)
+* **Interfaces & Integrations:** Slack App (User Client), Asana (Backlog Context, Output), Peerdom API (Data Enrichment)
 
 * **Agent Orchestrator:** Python App (Google ADK, Slack Bolt), built and hosted in Google Cloud (`cloudbuild`, `artifactregistry`, `run`)
 
@@ -56,12 +56,12 @@ Before setting up the project, ensure you have the following installed:
    ```
 
 3. **Environment Configuration:**
-   Create an `.env` file based on `.env.example`. You will need to complete it with secrets for your Slack App, Asana Project, and GCP environment. 
+   Create an `.env` file based on `.env.example`. You will need to complete it with secrets for your Slack App, Asana Project, Peerdom API, and GCP environment. 
 
    The Asana search service also needs `ASANA_WORKSPACE`, the workspace GID
    containing `ASANA_PROJECT_LOOKUP`. The token must have access to that project,
    including its tasks and stories. Asana workspace search requires a
-   qualifying paid workspace or user.
+   qualifying paid workspace or user. You will also need to set `PEERDOM_API_KEY` to access the Peerdom API for organizational data enrichment.
 
 4. **Google Cloud Authentication:**
    Authenticate your local machine to interact with Vertex AI:
