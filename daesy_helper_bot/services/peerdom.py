@@ -42,7 +42,8 @@ class PeerdomClient:
                 url = f"{self.BASE_URL}/peers"
                 async with session.get(url, headers=self.headers) as resp:
                     if resp.status != 200:
-                        logger.warning(f"Failed to fetch peers from Peerdom: {resp.status}")
+                        error_body = await resp.text()
+                        logger.warning(f"Peerdom API error ({resp.status}): {error_body[:200]}")
                         return None
 
                     peers = await resp.json()
@@ -51,7 +52,7 @@ class PeerdomClient:
                         if peer.get("email") == email:
                             return peer
                     
-                    logger.info(f"No peer found in Peerdom for email: {email}")
+                    logger.warning(f"No peer found in Peerdom for email: {email}")
                     return None
                     
         except Exception as e:
@@ -75,7 +76,8 @@ class PeerdomClient:
                 params = {"peer": peer_id}
                 async with session.get(url, headers=self.headers, params=params) as resp:
                     if resp.status != 200:
-                        logger.warning(f"Failed to fetch roles for peer {peer_id} from Peerdom: {resp.status}")
+                        error_body = await resp.text()
+                        logger.warning(f"Peerdom API error ({resp.status}): {error_body[:200]}")
                         return None
 
                     roles = await resp.json()
@@ -115,7 +117,7 @@ class PeerdomClient:
             # Fetch all roles for this peer
             roles = await self.get_roles_by_peer_id(peer_id)
             if not roles:
-                logger.info(f"No roles found for peer: {email}")
+                logger.warning(f"No roles found for peer: {email}")
                 return None
 
             # Build role summaries

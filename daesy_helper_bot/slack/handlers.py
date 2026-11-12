@@ -1,7 +1,9 @@
 import os
 import logging
+import time
 from typing import Any
 from google.genai import types
+from google.adk.events import Event, EventActions
 from daesy_helper_bot.slack.middleware import ignore_timeout_retries
 from daesy_helper_bot.slack.helpers import build_thread_context, get_loading_messages
 from daesy_helper_bot.session_utils import get_or_create_session, ensure_user_slack_info_cached, ensure_user_roles_cached
@@ -44,13 +46,28 @@ def register_slack_handlers(slack_app, mention_runner, dm_runner, session_servic
         
         # Fetch and cache user roles from Peerdom
         peerdom_api_key = os.environ.get("PEERDOM_API_KEY")
-        if user_email and peerdom_api_key:
-            await ensure_user_roles_cached(
-                session=session,
-                session_service=session_service,
-                user_email=user_email,
-                peerdom_api_key=peerdom_api_key
-            )
+        try:
+            if user_email and peerdom_api_key:
+                await ensure_user_roles_cached(
+                    session=session,
+                    session_service=session_service,
+                    user_email=user_email,
+                    peerdom_api_key=peerdom_api_key
+                )
+            else:
+                # Ensure roles_context exists even if we can't look it up
+                if not (session.state.get("roles_context") if hasattr(session, "state") else None):
+                    state_changes = {"roles_context": "(User organizational role information not available)"}
+                    actions_with_update = EventActions(state_delta=state_changes)
+                    system_event = Event(
+                        invocation_id=f"roles_fallback_{user_id}_{int(time.time())}",
+                        author="slack-app",
+                        actions=actions_with_update,
+                        timestamp=time.time()
+                    )
+                    await session_service.append_event(session, system_event)
+        except Exception as e:
+            logger.warning(f"Error during role caching: {e}")
         
         new_message = types.Content(role="user", parts=[types.Part(text=text)])
         

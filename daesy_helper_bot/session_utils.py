@@ -154,7 +154,7 @@ async def ensure_user_roles_cached(
     roles_summary = session.state.get(ROLES_CONTEXT_KEY) if hasattr(session, "state") else None
     
     if roles_summary:
-        logger.info(f"✓ User roles already cached in session")
+        logger.debug(f"✓ User roles already cached in session")
         return roles_summary
     
     try:
@@ -177,13 +177,42 @@ async def ensure_user_roles_cached(
             )
             
             await session_service.append_event(session, system_event)
-            logger.info(f"💾 Cached user roles context in session for {user_email}")
+            logger.debug(f"✓ Cached user roles for {user_email}")
             
             return roles_summary
         else:
-            logger.info(f"No roles found in Peerdom for {user_email}")
+            logger.debug(f"No roles found in Peerdom for {user_email}")
+            # Set a fallback empty context to prevent template errors
+            state_changes = {ROLES_CONTEXT_KEY: "No organizational roles found."}
+            actions_with_update = EventActions(state_delta=state_changes)
+            
+            system_event = Event(
+                invocation_id=f"peerdom_init_no_roles_{user_email}_{int(time.time())}",
+                author="peerdom-service",
+                actions=actions_with_update,
+                timestamp=time.time()
+            )
+            
+            await session_service.append_event(session, system_event)
             return None
             
     except Exception as e:
-        logger.error(f"❌ Failed to fetch or cache user roles from Peerdom: {e}")
+        logger.warning(f"Failed to fetch user roles from Peerdom for {user_email}: {e}")
+        # Set a fallback to prevent template substitution errors when Peerdom is unavailable
+        try:
+            fallback_context = "(Role information unavailable)"
+            state_changes = {ROLES_CONTEXT_KEY: fallback_context}
+            actions_with_update = EventActions(state_delta=state_changes)
+            
+            system_event = Event(
+                invocation_id=f"peerdom_fallback_{user_email}_{int(time.time())}",
+                author="peerdom-service",
+                actions=actions_with_update,
+                timestamp=time.time()
+            )
+            
+            await session_service.append_event(session, system_event)
+        except Exception as fallback_error:
+            logger.error(f"Failed to set fallback roles context: {fallback_error}", exc_info=True)
+        
         return None
